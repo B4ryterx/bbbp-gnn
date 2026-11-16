@@ -1,0 +1,581 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>BBBP GNN report</title>
+<style>
+  @page { size: A4; margin: 10mm 12mm 9mm 12mm; }
+  html { font-size: 8.55pt; }
+  body { font-family: "Charter","Georgia",serif; line-height: 1.22; color: #111; margin: 0; }
+  h1 { font-size: 15.5pt; margin: 0 0 1pt; line-height: 1.15; }
+  h2 { font-size: 10.2pt; margin: 8pt 0 2.5pt; padding-bottom: 1.5pt;
+       border-bottom: 0.7pt solid #b9bfc7; text-transform: uppercase; letter-spacing: .04em; }
+  h3 { font-size: 9.4pt; margin: 5pt 0 1.5pt; }
+  p { margin: 0 0 3pt; text-align: justify; }
+  .subtitle { font-size: 10.3pt; color: #3c4147; margin: 0 0 4pt; font-style: italic; }
+  .meta { font-size: 8.3pt; color: #444; border-top: 0.7pt solid #b9bfc7;
+          border-bottom: 0.7pt solid #b9bfc7; padding: 3pt 0; margin: 5pt 0 7pt; }
+  .meta b { color: #111; }
+  table { border-collapse: collapse; width: 100%; font-size: 7.8pt; margin: 2.5pt 0 4pt; }
+  th, td { border-bottom: 0.5pt solid #d2d6db; padding: 1.3pt 2.5pt; text-align: right; }
+  th { border-bottom: 0.8pt solid #8d949c; text-align: right; font-weight: 600; }
+  th:first-child, td:first-child, .l { text-align: left; }
+  caption { caption-side: top; text-align: left; font-size: 8.1pt; color: #333;
+            padding-bottom: 2pt; font-style: italic; }
+  .row { display: flex; gap: 6pt; align-items: flex-start; margin: 2.5pt 0 4pt; }
+  .row > div { flex: 1; break-inside: avoid; }
+  img { width: 100%; display: block; }
+  img[src$="02_example_molecules.png"] { max-height: 50mm; width: auto; margin: 0 auto; }
+  img[src$="03_molecule_two_views.png"] { max-height: 36mm; width: auto; margin: 0 auto; }
+  img[src$="07_errors_and_neighbours.png"] { max-height: 58mm; width: auto; margin: 0 auto; }
+  img[src$="01_graph_sizes.png"] { max-height: 31mm; width: auto; }
+  img[src^="../results/figures/04_"] { max-height: 31mm; width: auto; }
+  img[src^="../results/figures/05_"] { max-height: 40mm; width: auto; }
+  img[src^="../results/figures/06_"] { max-height: 34mm; width: auto; margin: 0 auto; }
+  img[src$="08_similarity_vs_accuracy.png"] { max-height: 44mm; width: auto; margin: 0 auto; }
+  .cap { font-size: 7.2pt; color: #444; margin-top: 1.5pt; line-height: 1.25; }
+  .key { background: #f2f4f6; border-left: 2.2pt solid #3B6FB6; padding: 3.5pt 5pt;
+         margin: 4pt 0; font-size: 8.3pt; }
+  .key p { margin: 0 0 2.5pt; }
+  .key p:last-child { margin: 0; }
+  code { font-family: "SF Mono",Menlo,monospace; font-size: 8pt; background: #f2f4f6;
+         padding: 0 1.5pt; }
+  ol, ul { margin: 2pt 0 4pt; padding-left: 13pt; }
+  li { margin-bottom: 1.2pt; text-align: justify; }
+  .eq { text-align: center; margin: 3pt 0 4pt; font-size: 9.2pt; }
+  .refs { font-size: 8.1pt; } .refs li { margin-bottom: 1.3pt; }
+  .pb { page-break-before: always; }
+  ol.two { column-count: 2; column-gap: 11pt; padding-left: 0; }
+  ol.two li { break-inside: avoid; list-style-position: inside; text-indent: -10pt;
+              padding-left: 10pt; }
+  .note { font-size: 7.8pt; color: #555; font-style: italic; }
+  .bad { color: #B02E0C; font-weight: 600; }
+</style>
+
+<h1>Molecular property prediction with graph neural networks</h1>
+<p class="subtitle">Blood–brain barrier penetration: fingerprint baselines, molecular graphs and scaffold-aware evaluation</p>
+<div class="meta">
+<b>ENG 2440</b> Medical Imaging &amp; AI in Healthcare · Assignment 3 · Fall 2026 &nbsp;|&nbsp;
+<b>Author:</b> [Name], [Student ID] &nbsp;|&nbsp;
+<b>Code:</b> github.com/[user]/bbbp-gnn &nbsp;|&nbsp;
+<b>Seed:</b> 0 (splits), 0/1/2 (GNN) &nbsp;|&nbsp; <b>Runtime:</b> 303 s, CPU
+<br><span class="note">Educational benchmark experiment. The BBBP label is a curated literature
+annotation, not a clinical measurement. Nothing here establishes that a compound is safe,
+effective, biologically causal, or ready for development.</span>
+</div>
+
+<div class="key">
+<p><b>Question.</b> Does a bond-aware graph neural network predict blood–brain barrier
+penetration better than a 2015-vintage molecular fingerprint with a linear model — and how
+much of the answer survives being tested on chemistry the model has never seen?</p>
+<p><b>Answer.</b> On a random split the GNN leads by 0.016 ROC-AUC. On a scaffold split it
+leads by 0.031, which is exactly one seed standard deviation, so <b>no advantage is
+demonstrated on the split that represents the question of interest</b>. Changing the split
+costs 0.138–0.153 ROC-AUC: four to five times what changing the model gains. Meanwhile
+accuracy and F1 <i>rise</i> on the harder split while specificity falls from 0.768 to 0.217.
+Error rate tracks Tanimoto distance to the training set (72.4% correct in the least-similar
+third vs 90.8% in the most-similar third, Mann–Whitney p = 0.0008).</p>
+</div>
+
+<h2>A. Task definition and dataset</h2>
+<p><b>Input</b> one molecule as a SMILES string, converted to a graph (atoms = nodes, bonds =
+edges). <b>Output</b> one probability in [0,1] for the whole molecule. <b>Unit of analysis</b>
+the molecule — not an atom, not a patient, not a dose. <b>Task</b> graph-level binary
+classification. <b>Intended technical use</b> ranking and triage within a method-comparison
+experiment. <code>p_np = 1</code> means the compound is annotated in the source literature as
+penetrating the barrier, <code>p_np = 0</code> as non-penetrating. These are curated
+annotations compiled from heterogeneous sources — different assays, species and definitions
+of "penetrating" — not measurements under one protocol.</p>
+
+<h3>A.1 Cleaning, applied before any split is made</h3>
+<p>One SMILES string is not one molecule: the same compound can be written many ways, so
+de-duplicating on the raw string finds only some repeats. Every SMILES is canonicalized with
+RDKit first and duplicates are detected on the canonical form. Where records share a canonical
+SMILES and agree, one is kept; where they <b>disagree, the whole group is deleted</b>. That
+rule costs molecules but is the only defensible option — keeping either label guarantees a
+known-wrong example, and in the test set a correct prediction would then score as an error.</p>
+
+<div class="row">
+<div style="flex:1.15">
+<table>
+<caption>Table 1 — cleaning ledger. No unparseable SMILES, empty graphs or non-finite labels occurred.</caption>
+<tr><th class="l">stage</th><th>n</th></tr>
+<tr><td class="l">rows in the MoleculeNet CSV</td><td>2050</td></tr>
+<tr><td class="l">graphs built by the PyG loader</td><td>2039</td></tr>
+<tr><td class="l">unparseable SMILES / empty graphs / bad labels</td><td>0 / 0 / 0</td></tr>
+<tr><td class="l">duplicate records collapsed (same canonical SMILES, labels agree)</td><td>−54</td></tr>
+<tr><td class="l">conflicting-label records removed (10 groups)</td><td>−20</td></tr>
+<tr><th class="l">clean set</th><th>1965</th></tr>
+<tr><td class="l">negative / positive</td><td>465 / 1500</td></tr>
+<tr><td class="l">positive proportion</td><td>0.7634</td></tr>
+</table>
+<p class="note">Atoms per molecule: min 2, median 23, mean 24.2, max 132. Bonds: min 1,
+median 25, mean 26.1, max 145. Example graph (index 0, <code>BrC(Br)Br</code>, y = 1.0):
+<code>x</code> (4, 9), <code>edge_index</code> (2, 6), <code>edge_attr</code> (6, 3).</p>
+</div>
+<div style="flex:0.85">
+<img src="../results/figures/01_graph_sizes.png">
+<p class="cap"><b>Fig. 1</b> Graph size distributions. Both are right-skewed with a long tail
+of large molecules; the median molecule has 23 atoms.</p>
+</div>
+</div>
+
+<div class="key">
+<p><b>The dataset contains aspirin twice, with opposite labels.</b> Record 102
+(<i>acetylsalicylate</i>, <code>CC(=O)Oc1ccccc1C(O)=O</code>, p_np = 0) and record 1009
+(<i>aspirin</i>, <code>C1=CC=CC(=C1C(O)=O)OC(C)=O</code>, p_np = 1) are the same molecule in
+two spellings. Raw-string de-duplication cannot see this; canonicalization finds it along with
+nine other conflicting groups — among them atropine, levodopa, loperamide and loratadine.
+Their <code>name</code> fields expose the mechanism: <i>BRL53080</i>/<i>loperamide</i>,
+<i>Trimetrexate</i>/<i>trimetrexate</i>, <i>indomethacin</i>/<i>indomethacin(indometacin)</i>.
+The benchmark was merged from sources that disagreed on the name <b>and</b> on the answer
+(§ G.3, limitation 1).</p>
+</div>
+
+<div class="row">
+<div style="flex:1.3">
+<img src="../results/figures/02_example_molecules.png">
+<p class="cap"><b>Fig. 2</b> Six molecules, three from each class, with canonical SMILES and
+label. Top row penetrating (y = 1), bottom row non-penetrating (y = 0).</p>
+</div>
+<div style="flex:0.7">
+<img src="../results/figures/03_molecule_two_views.png">
+<p class="cap"><b>Fig. 3</b> One molecule as chemistry and as a node–edge graph, atom indices
+shared. Each heavy atom is one node; each bond is one edge, stored <i>twice</i> in
+<code>edge_index</code> (once per direction) so messages travel both ways. Hydrogens are
+implicit and are not nodes; aromaticity is a bond category, not geometry.</p>
+</div>
+</div>
+
+<h2>B. Molecular graphs: features, encoding, batching</h2>
+<p>The PyG <code>from_smiles</code> featurizer produces nine atom columns and three bond
+columns. <b>Every one is a category code.</b> Column 0 is the atomic number, so carbon is 6
+and lithium is 3 — but carbon is not "twice" lithium. Passing those integers to a linear layer
+asserts an ordering and a spacing that do not exist in chemistry.</p>
+
+<div class="row">
+<div>
+<table>
+<caption>Table 2 — the twelve categorical columns and their vocabulary sizes.</caption>
+<tr><th class="l">x column</th><th>vocab</th><th class="l">edge_attr column</th><th>vocab</th></tr>
+<tr><td class="l">0 atomic_num</td><td>119</td><td class="l">0 bond_type</td><td>22</td></tr>
+<tr><td class="l">1 chirality</td><td>4</td><td class="l">1 stereo</td><td>6</td></tr>
+<tr><td class="l">2 degree</td><td>11</td><td class="l">2 is_conjugated</td><td>2</td></tr>
+<tr><td class="l">3 formal_charge</td><td>12</td><td class="l"></td><td></td></tr>
+<tr><td class="l">4 num_hs</td><td>9</td><td class="l" colspan="2" style="text-align:left">
+<b>Encoding: trainable embeddings</b></td></tr>
+<tr><td class="l">5 num_radical_electrons</td><td>5</td><td class="l" colspan="2"
+style="text-align:left">one <code>nn.Embedding</code> per column, summed (the OGB
+convention)</td></tr>
+<tr><td class="l">6 hybridization</td><td>8</td><td class="l" colspan="2"></td></tr>
+<tr><td class="l">7 is_aromatic</td><td>2</td><td class="l" colspan="2"></td></tr>
+<tr><td class="l">8 is_in_ring</td><td>2</td><td class="l" colspan="2"></td></tr>
+</table>
+<p>Embeddings are preferred to one-hot here because the atomic-number vocabulary alone is 119
+wide and most of it never occurs in this dataset; a table learns a representation only for the
+elements present, and the summed encoding keeps the input dimension at the hidden width
+instead of 192.</p>
+</div>
+<div style="flex:0.92">
+<h3>B.1 Batching and integrity</h3>
+<p>PyG batches graphs by stacking them into one disconnected graph. For 32 molecules:
+<code>x</code> (708, 9) — every atom stacked; <code>edge_index</code> (2, 1498) — indices into
+that stack; <code>edge_attr</code> (1498, 3); <code>batch</code> (708) — which molecule each
+atom came from, which is what lets pooling emit one vector per molecule rather than one per
+batch; <code>y</code> (32, 1).</p>
+<table>
+<caption>Table 3 — integrity checks, run on the clean set and asserted before training.</caption>
+<tr><th class="l">check</th><th>result</th></tr>
+<tr><td class="l">all labels finite</td><td>ok</td></tr>
+<tr><td class="l">every graph has ≥ 1 atom</td><td>ok</td></tr>
+<tr><td class="l">labels are binary {0, 1}</td><td>ok</td></tr>
+<tr><td class="l">edge_index within node range, edges bidirectional</td><td>ok</td></tr>
+<tr><td class="l">batch labels = number of graphs (32 = 32)</td><td>ok</td></tr>
+<tr><td class="l">max(batch) + 1 = graphs in batch, nothing lost</td><td>ok</td></tr>
+<tr><td class="l">GNN output invariant to atom relabelling</td><td>ok</td></tr>
+</table>
+<p class="note">The last check matters because a model that is <i>not</i> permutation-invariant
+would still train and still score — it would simply be learning the arbitrary order in which
+RDKit happened to emit atoms.</p>
+</div>
+</div>
+
+<h2 class="pb">C. Random and scaffold splits</h2>
+<p>Drug datasets are not samples of chemical space; they are collections of <i>families</i>.
+The same parent compound recurs as a salt, an ester, a homologue, a methylated analogue. A
+random split cuts through those families, so a test molecule routinely has a near-twin in
+training, and a model can score well by recognising the family rather than learning anything
+that transfers. The resulting number estimates interpolation within known series — not
+generalization. A <b>Bemis–Murcko scaffold split</b> forces every molecule sharing a ring
+framework into one subset, so test scaffolds are genuinely unseen: the question a drug
+programme actually asks. Acyclic molecules (95 of them) have an empty Murcko scaffold and are
+kept as <b>one group</b>, not one each — the conservative choice, since it guarantees no
+acyclic molecule in test has an acyclic twin in train. Both splits are 70:15:15 from seed 0,
+and both were verified for complete coverage, pairwise-disjoint indices, and no canonical
+SMILES shared across subsets; for the scaffold split, scaffold sets were verified disjoint.</p>
+
+<div class="row">
+<div>
+<table>
+<caption>Table 4 — subset sizes, class balance and scaffold counts. 1020 unique scaffolds in the clean set.</caption>
+<tr><th class="l">split</th><th class="l">subset</th><th>n</th><th>positive</th><th>frac</th><th>scaffolds</th></tr>
+<tr><td class="l">random</td><td class="l">train</td><td>1376</td><td>1050</td><td>0.763</td><td>766</td></tr>
+<tr><td class="l"></td><td class="l">val</td><td>295</td><td>225</td><td>0.763</td><td>216</td></tr>
+<tr><td class="l"></td><td class="l">test</td><td>294</td><td>225</td><td>0.765</td><td>212</td></tr>
+<tr><td class="l">scaffold</td><td class="l">train</td><td>1376</td><td>1036</td><td>0.753</td><td>431</td></tr>
+<tr><td class="l"></td><td class="l">val</td><td>295</td><td>216</td><td>0.732</td><td>295</td></tr>
+<tr><td class="l"></td><td class="l">test</td><td>294</td><td>248</td><td class="bad">0.844</td><td>294</td></tr>
+</table>
+<p>The random split preserves the class balance by construction (0.763/0.763/0.765). The
+scaffold split cannot: grouping by framework means the balance follows whichever frameworks
+land where, and <b>the scaffold test set comes out 84.4% positive</b> against 75.3% in
+training. That drift is not a defect to be corrected — it is part of what makes the split
+realistic — but it must be read alongside the accuracy column in § F, because a higher base
+rate raises accuracy for a majority-predicting model <i>for free</i>.</p>
+<p class="note">Scaffold counts in the random split sum to 1194 against 1020 unique — the
+leakage made visible, the same framework on both sides of the line. In the scaffold split they
+sum to exactly 1020.</p>
+</div>
+<div style="flex:0.85">
+<div class="key" style="margin-top:0">
+<p><b>A silent failure this pipeline refuses to have.</b> RDKit 2026.09.2 raises
+<code>RuntimeError: bad any cast</code> from <code>Chem.MurckoDecompose</code>. An early
+version of the scaffold function caught that exception and returned <code>""</code>. All 1965
+molecules were then assigned to the single "acyclic" group, the training set came out
+<b>empty</b>, and <span class="bad">every disjointness check still passed</span> — because
+disjoint-and-empty is disjoint. The reported split was structurally valid and scientifically
+meaningless.</p>
+<p>Three changes make that class of failure loud: the function <b>raises</b> rather than
+catching; an empty scaffold is cross-checked against RDKit's ring count and raises if the
+molecule has rings; and <code>scaffold_split</code> rejects any decomposition yielding fewer
+than 10 groups or a group holding more than half the data. The environment pins
+<code>rdkit==2025.03.6</code>. Expected sanity values, asserted in the notebook before use:
+aspirin → <code>c1ccccc1</code>, butanol → <code>""</code>, 1020 scaffolds, 95 acyclic.</p>
+</div>
+<p>Both test sets were then left untouched until § F. No test index was used for model
+selection, hyperparameter choice, or threshold choice at any point.</p>
+</div>
+</div>
+
+<h2>D. Non-neural baseline: Morgan ECFP + logistic regression</h2>
+<p>A baseline exists to make the GNN's number mean something. This one is deliberately old and
+simple. <b>Morgan fingerprints, radius 2 (ECFP4), 2048 bits</b>: every circular atom
+neighbourhood up to two bonds out is hashed to a bit position, so the vector is a
+presence/absence description of local chemistry — substructures, with no notion of global
+shape, conformation or the relative position of distant groups. Features are the raw bit
+vectors; the classifier is L2-regularised logistic regression (liblinear).</p>
+<p><b>Protocol.</b> Fitted on training molecules only. <code>class_weight="balanced"</code>,
+estimated from the training subset only — the class ratio is a property of the data and
+reading it off validation or test is leakage. <code>C</code> was chosen by validation ROC-AUC
+over {0.01, 0.03, 0.1, 0.3, 1, 3, 10}: the random-split curve peaked at C = 0.1 (0.9334) and
+the scaffold-split curve at C = 0.1 (0.8906), both declining monotonically thereafter, which
+is the expected direction — 2048 sparse bits on 1376 molecules needs strong regularisation.
+One decision threshold was then selected on validation by F1 and frozen. Each test set was
+scored exactly once. Full settings: radius 2, 2048 bits, no chirality, balanced class weight,
+C = 0.1, liblinear, seed 0, threshold objective F1.</p>
+
+<h2>E. Graph neural network</h2>
+<div class="row">
+<div style="flex:1.08">
+<h3>E.1 Architecture</h3>
+<p><b>GINEConv</b>, the edge-aware Graph Isomorphism Network layer:</p>
+<p class="eq">h<sub>v</sub>&prime; = MLP( (1+&epsilon;)·h<sub>v</sub> +
+&Sigma;<sub>u&isin;N(v)</sub> ReLU(h<sub>u</sub> + e<sub>uv</sub>) )</p>
+<p>The bond embedding e<sub>uv</sub> enters <i>inside</i> the sum, so bond information shapes
+every message rather than being concatenated at the end. That is the reason to prefer it to
+GCN or plain GIN here: whether a ring bond is aromatic, or a carbonyl conjugated, changes what
+a neighbour ought to contribute. Three message-passing layers (the requirement is ≥ 2), each
+with BatchNorm, ReLU, dropout 0.3 and a residual connection; a <b>separate bond encoder per
+layer</b>, because what matters about a bond differs between the first hop and the third;
+mean pooling over atoms; a two-layer head returning one logit.
+<code>GINENet(hidden=128, layers=3, pooling=mean, dropout=0.3)</code> — <b>250,244
+parameters</b> for 1376 training molecules, a ratio worth keeping in mind when reading § F.</p>
+</div>
+<div style="flex:0.92">
+<h3>E.2 Training choices and their reasons</h3>
+<table>
+<caption>Table 5 — every training decision, fixed before the test sets were touched.</caption>
+<tr><th class="l">choice</th><th class="l">value and reason</th></tr>
+<tr><td class="l">loss</td><td class="l">BCEWithLogits, <code>pos_weight</code> =
+n<sub>neg</sub>/n<sub>pos</sub> <b>from train only</b>; on BBBP it is &lt; 1, down-weighting
+the majority class</td></tr>
+<tr><td class="l">optimiser</td><td class="l">Adam, lr 1e−3, weight decay 1e−5; the model is
+too small for the optimiser choice to be interesting, and dropout already regularises</td></tr>
+<tr><td class="l">batch size</td><td class="l">64; a singleton final batch is dropped, since
+BatchNorm cannot normalise one sample</td></tr>
+<tr><td class="l">budget</td><td class="l">200 epochs, early stop at patience 30; the budget
+is generous and early stopping sets the real one</td></tr>
+<tr><td class="l">selection</td><td class="l">best <b>validation ROC-AUC</b>, weights
+restored — <i>not</i> validation loss, which is dominated by the majority class and keeps
+improving after ranking quality has peaked</td></tr>
+<tr><td class="l">seeds</td><td class="l">0, 1, 2 per split, so seed noise can be separated
+from the split effect</td></tr>
+</table>
+</div>
+</div>
+
+<div class="row">
+<div><img src="../results/figures/04_training_random.png">
+<p class="cap"><b>Fig. 4</b> Random split, seed 0. Validation loss separates from training
+loss while validation ROC-AUC is still rising — classic overfitting, and the reason selection
+is on ROC-AUC rather than loss. Best epoch 47 of 77.</p></div>
+<div><img src="../results/figures/04_training_scaffold.png">
+<p class="cap"><b>Fig. 5</b> Scaffold split, seed 0. The same overfitting plus visible
+instability in validation ROC-AUC (step sd 0.049): with unseen frameworks in validation, small
+weight changes move the ranking a lot. Best epoch 16 of 46.</p></div>
+</div>
+<p><b>Diagnosis, from the validation curves only.</b> All six runs overfit: validation loss
+ends well above training loss, and the best validation ROC-AUC arrives 30 epochs before the
+stop in every case. Two of the three scaffold runs are additionally unstable (step sd 0.049
+and 0.030 versus none flagged on random). Early stopping therefore does real work here rather
+than being a formality. <b>Seed noise vs split effect:</b> the mean within-split standard
+deviation of ROC-AUC is 0.0210, while the random − scaffold gap is 0.1385 — a ratio of
+<b>6.6×</b>. Changing the split does something categorically larger than changing the seed.</p>
+
+<h2 class="pb">F. Evaluation</h2>
+<p>Every number below uses a threshold selected on the corresponding validation subset; each
+test set was scored once per model per split. GNN rows are mean ± sd over seeds 0, 1, 2.</p>
+<table>
+<caption>Table 6 — the required comparison. Thresholds are validation-selected; the GNN
+threshold is the mean across seeds.</caption>
+<tr><th class="l">model</th><th class="l">split</th><th>thr</th><th>ROC-AUC</th><th>PR-AUC</th>
+<th>accuracy</th><th>bal. acc</th><th>sens</th><th>spec</th><th>F1</th></tr>
+<tr><td class="l">ECFP + LR</td><td class="l">random</td><td>0.528</td><td>0.913</td>
+<td>0.969</td><td>0.854</td><td>0.824</td><td>0.880</td><td>0.768</td><td>0.902</td></tr>
+<tr><td class="l">GNN (GINE)</td><td class="l">random</td><td>0.129</td><td>0.929 ± 0.011</td>
+<td>0.978 ± 0.003</td><td>0.876 ± 0.023</td><td>0.792 ± 0.031</td><td>0.951 ± 0.016</td>
+<td>0.633 ± 0.047</td><td>0.922 ± 0.015</td></tr>
+<tr><td class="l">ECFP + LR</td><td class="l">scaffold</td><td>0.225</td><td>0.760</td>
+<td>0.946</td><td>0.874</td><td>0.607</td><td>0.996</td><td class="bad">0.217</td>
+<td>0.930</td></tr>
+<tr><td class="l">GNN (GINE)</td><td class="l">scaffold</td><td>0.265</td><td>0.791 ± 0.031</td>
+<td>0.957 ± 0.007</td><td>0.833 ± 0.012</td><td>0.597 ± 0.040</td><td>0.941 ± 0.024</td>
+<td class="bad">0.254 ± 0.098</td><td>0.905 ± 0.008</td></tr>
+</table>
+
+<div class="row">
+<div><img src="../results/figures/05_curves_random.png">
+<p class="cap"><b>Fig. 6</b> ROC and precision–recall, random split test set.</p></div>
+<div><img src="../results/figures/05_curves_scaffold.png">
+<p class="cap"><b>Fig. 7</b> Scaffold split. PR-AUC stays high (0.946–0.957) only because the
+base rate is 0.844 — the dashed line. Read it against that line, not against 0.5.</p></div>
+</div>
+<div class="row">
+<div><img src="../results/figures/06_confusion_random.png">
+<p class="cap"><b>Fig. 8</b> Random split. The baseline recovers 53 of 69 negatives.</p></div>
+<div><img src="../results/figures/06_confusion_scaffold.png">
+<p class="cap"><b>Fig. 9</b> Scaffold split. The baseline finds <b>10 of 46</b> negatives and
+misses 36; the GNN is no better in kind. Both have become majority-class predictors.</p></div>
+</div>
+
+<h3>F.1 What the evidence supports</h3>
+<p><b>Baseline versus GNN — read the gap against the seed spread.</b> The GNN leads on ROC-AUC
+on both splits, by 0.016 on random and 0.031 on scaffold. The scaffold-split seed standard
+deviation is 0.031. The margin and the noise are the same size, so the honest statement is
+<b>no demonstrated advantage</b> on the split of interest — not "the GNN wins", and not
+"fingerprints win". A GNN is not entitled to beat a fingerprint: 1376 training molecules is
+very little data for 250,244 parameters, and the baseline's 2048-bit substructure
+representation is well matched to a dataset where penetration correlates with recognisable
+functional groups.</p>
+<p><b>Random versus scaffold — the split dominates.</b> Scaffold evaluation costs the GNN
+0.138 ROC-AUC and the baseline 0.153, against a 0.016–0.031 model effect and 0.021 seed
+noise. A single random-split number on BBBP is therefore mostly a report about the split, and
+is not comparable to a scaffold-split number from another paper.</p>
+<p><b>The trap in the accuracy column.</b> Going to the <i>harder</i> split, the baseline's
+accuracy <i>rises</i> 0.854 → 0.874 and its F1 <i>rises</i> 0.902 → 0.930, while its
+specificity falls 0.768 → 0.217 and balanced accuracy falls 0.824 → 0.607. Two things produce
+this: the test base rate is higher (0.844 vs 0.765, Table 4), and both models respond to
+unfamiliar chemistry by predicting the majority class — sensitivity 0.996, specificity 0.217.
+That is the base rate wearing a model's clothes. <b>The two most commonly reported metrics in
+this literature are the two that conceal the failure</b>; balanced accuracy and specificity
+are the columns that expose it, which is why they are reported here throughout.
+<b>And none of it is biology:</b> a fingerprint bit co-occurring with a label is a correlation
+in a curated table, and nothing in these numbers identifies a mechanism of penetration or
+supports a claim about any compound.</p>
+
+<h2>G. Error, similarity and limitations</h2>
+<p>Every molecule in the scaffold test set is matched to its most similar <i>training</i>
+molecule by Tanimoto similarity over Morgan fingerprints (|A∩B|/|A∪B| on the bit sets). This
+separates two failure modes that call for opposite responses: an error <b>far</b> from
+anything in training is an applicability-domain problem, where the right response is to
+decline to predict rather than to train harder; an error with a <b>close, correctly-labelled
+neighbour</b> is a modelling failure, an activity cliff, or a label error.</p>
+
+<div class="row">
+<div style="flex:1.02">
+<table>
+<caption>Table 7 — the two most confident false positives and false negatives (seed 0, best
+scaffold run), each with its nearest training molecule.</caption>
+<tr><th class="l">kind</th><th>p</th><th>true</th><th>NN sim</th><th>NN label</th><th class="l">reading</th></tr>
+<tr><td class="l">FP</td><td>0.970</td><td>0</td><td>0.273</td><td>0 (agrees)</td>
+<td class="l">far from everything; confidence unearned</td></tr>
+<tr><td class="l">FP</td><td>0.968</td><td>0</td><td>0.609</td><td>1 (disagrees)</td>
+<td class="l">close analogue, opposite label — an activity cliff</td></tr>
+<tr><td class="l">FN</td><td>0.035</td><td>1</td><td>0.512</td><td>1 (agrees)</td>
+<td class="l">neighbour was right; a modelling failure</td></tr>
+<tr><td class="l">FN</td><td>0.044</td><td>1</td><td>0.333</td><td>0 (disagrees)</td>
+<td class="l">distant, misleading neighbour</td></tr>
+</table>
+<p><b>Does similarity explain the errors?</b> In three of the four cases it helps. The first
+FP is pure extrapolation: the nearest training molecule shares only 27% of its bits, so the
+0.970 probability reflects nothing the model has evidence for. The second FP is the opposite
+and more interesting — a 0.609-similar training molecule carrying the <i>opposite</i> label,
+so the model generalised exactly as designed and was defeated by an activity cliff; no amount
+of training fixes that case. The first FN has a 0.512-similar, correctly-labelled neighbour,
+which is a genuine modelling failure with no excuse available. So similarity is diagnostic of
+<i>which kind</i> of error occurred, and in the distant cases it directly indicts the
+confidence.</p>
+</div>
+<div style="flex:0.98">
+<img src="../results/figures/07_errors_and_neighbours.png">
+<p class="cap"><b>Fig. 10</b> Each error beside its nearest training molecule. Left column the
+test molecule, right column its neighbour.</p>
+</div>
+</div>
+
+<div class="row">
+<div style="flex:0.95">
+<img src="../results/figures/08_similarity_vs_accuracy.png">
+<p class="cap"><b>Fig. 11</b> Fraction predicted correctly against Tanimoto similarity to the
+nearest training molecule, scaffold test set. The dashed line is the 84% overall accuracy that
+a single headline number would report.</p>
+</div>
+<div style="flex:1.05">
+<h3>G.2 The aggregate relationship</h3>
+<table>
+<caption>Table 8 — reliability against distance from training, scaffold test set (n = 294).</caption>
+<tr><th class="l">quantity</th><th>value</th></tr>
+<tr><td class="l">overall accuracy</td><td>0.840</td></tr>
+<tr><td class="l">accuracy, least-similar third (sim &lt; 0.308)</td><td class="bad">0.724</td></tr>
+<tr><td class="l">accuracy, most-similar third (sim &gt; 0.426)</td><td>0.908</td></tr>
+<tr><td class="l">mean similarity, correct predictions</td><td>0.398</td></tr>
+<tr><td class="l">mean similarity, wrong predictions</td><td>0.340</td></tr>
+<tr><td class="l">Mann–Whitney U (one-sided)</td><td>7498.5</td></tr>
+<tr><td class="l">p-value</td><td><b>0.00076</b></td></tr>
+</table>
+<p>The headline accuracy averages over molecules of very different difficulty. The gap between
+the least- and most-similar thirds (0.724 vs 0.908) is significant at p = 0.0008 by a
+one-sided Mann–Whitney test on the similarity of correct versus incorrect predictions.
+<b>The model is reliable on familiar chemistry and close to coin-flipping on unfamiliar
+chemistry — and nothing in its output says which case you are in.</b> A single probability
+cannot distinguish "confident because this is a well-covered series" from "confident because
+an extrapolation landed somewhere confident"; Table 7's first FP is that failure at
+p = 0.970.</p>
+</div>
+</div>
+
+<h3>G.3 Limitations</h3>
+<ol class="two">
+<li><b>The labels are not measurements.</b> BBBP is a literature compilation across assays,
+species and definitions of penetration. The ten conflicting-label groups removed in § A are
+direct evidence — the same molecule with both labels, aspirin among them — and the 54 exact
+duplicates indicate overlapping sources rather than end-to-end curation. The achievable
+ceiling is below 1.0; this report cannot say where.</li>
+<li><b>The dataset is small and narrow.</b> About 2000 compounds, 76% one class, weighted
+toward marketed drugs — themselves biased, having survived development and been optimised for
+properties that correlate with the label. A 15% test set is 294 molecules, so a two-point
+difference is inside the noise; the 0.031 model gap is exactly this problem.</li>
+<li><b>No external experimental validation.</b> Every number comes from one dataset split
+three ways. There is no held-out measurement, no prospective test, and no second dataset
+anywhere in this pipeline.</li>
+<li><b>Correlation, not causality.</b> A fingerprint bit co-occurring with a label says
+nothing about mechanism, and a model reproducing a correlation has not explained it. The
+features contain no transporter biology, no efflux, no plasma protein binding, no dose.</li>
+<li><b>Scaffold split is one definition of novelty.</b> Bemis–Murcko frameworks are a crude
+proxy for "new chemistry": molecules with different frameworks can be near-identical in the
+properties governing penetration, and two sharing a framework can differ sharply. Fig. 11 is
+the continuous version of the same question, and the more informative instrument.</li>
+<li><b>Not a clinical or development tool.</b> No output here is evidence that a compound is
+safe, effective or worth synthesising, for any patient or programme. Reading a probability
+from it as a decision about a molecule misuses a benchmark experiment.</li>
+</ol>
+
+<h2>H. Conclusions</h2>
+<ol class="two">
+<li><b>The split moves the result several times more than the model does</b> — 0.138–0.153
+ROC-AUC against a 0.016–0.031 model effect and 0.021 seed noise. On the scaffold split the
+GNN's margin equals one seed standard deviation: 250,244 parameters buy nothing
+distinguishable from noise over a 2015 fingerprint, at this dataset size.</li>
+<li><b>Accuracy and F1 move the wrong way on the harder split</b>, rising while specificity
+collapses from 0.768 to 0.217, because both models fall back on a base rate that is itself
+higher in the scaffold test set. Balanced accuracy and specificity are the only reported
+columns that reveal it.</li>
+<li><b>Reliability is not uniform, and it is predictable</b> — error rate tracks Tanimoto
+distance to training at p = 0.0008, a property the model's output does not expose. The next
+step is not a bigger network but one that declines to answer outside its applicability
+domain.</li>
+</ol>
+
+<h2 class="pb">References</h2>
+<ol class="refs">
+<li>Wu, Z., Ramsundar, B., Feinberg, E. N., et al. MoleculeNet: a benchmark for molecular
+machine learning. <i>Chemical Science</i> 9(2):513–530, 2018.</li>
+<li>Martins, I. F., Teixeira, A. L., Pinheiro, L., Falcão, A. O. A Bayesian approach to in
+silico blood–brain barrier penetration modeling. <i>J. Chem. Inf. Model.</i>
+52(6):1686–1697, 2012.</li>
+<li>Bemis, G. W., Murcko, M. A. The properties of known drugs. 1. Molecular frameworks.
+<i>J. Med. Chem.</i> 39(15):2887–2893, 1996.</li>
+<li>Hu, W., Liu, B., Gomes, J., et al. Strategies for pre-training graph neural networks.
+<i>ICLR</i>, 2020. (GINEConv; the summed-embedding atom/bond encoder convention.)</li>
+<li>Xu, K., Hu, W., Leskovec, J., Jegelka, S. How powerful are graph neural networks?
+<i>ICLR</i>, 2019. (GIN.)</li>
+<li>Fey, M., Lenssen, J. E. Fast graph representation learning with PyTorch Geometric.
+<i>ICLR Workshop on Representation Learning on Graphs and Manifolds</i>, 2019.</li>
+<li>Rogers, D., Hahn, M. Extended-connectivity fingerprints. <i>J. Chem. Inf. Model.</i>
+50(5):742–754, 2010.</li>
+<li>Landrum, G., et al. RDKit: open-source cheminformatics. https://www.rdkit.org/</li>
+</ol>
+
+<h2>Appendix 1 — Reproducibility</h2>
+<p>One command reproduces every number and figure in this report:
+<code>python scripts/run_all.py</code> (303 s, CPU only), or equivalently the notebook
+<code>BBBP_molecular_property_prediction.ipynb</code> top to bottom. Split seed 0; GNN seeds
+0, 1, 2. <code>python tests/test_pipeline.py</code> runs 35 checks in ~20 s without
+downloading the dataset.</p>
+<p><b>Environment.</b> torch 2.14.0, torch_geometric, rdkit <b>2025.03.6 (pinned)</b>,
+scikit-learn, numpy, scipy, matplotlib. The RDKit pin is load-bearing, not cosmetic: see
+§ C. <code>data/</code> is gitignored; the MoleculeNet file is downloaded by the loader.</p>
+<p><b>Repository layout.</b> <code>bbbp/</code> — config (every result-affecting number in one
+object), data (load, canonicalize, de-duplicate, remove conflicts), splits (both strategies
+plus verification), features (fingerprints, Tanimoto), models (GINENet), train (loop, early
+stopping, frozen threshold), baseline, metrics, errors, plots. <code>scripts/run_all.py</code>
+— the eight-stage pipeline. <code>tests/test_pipeline.py</code> — 35 fast checks.
+<code>results/</code> — results.json, comparison.csv, error_rows_scaffold.csv, 11 figures.</p>
+<p><b>What the test suite covers,</b> chosen because the worst failures in this pipeline are
+silent: canonicalization collapses the two aspirin spellings; Murcko scaffolds on known
+molecules; a degenerate scaffold decomposition is <i>rejected</i>; fingerprint
+self-similarity = 1.0; the all-positive trap (0.90 accuracy, 0.50 balanced accuracy) is
+detected; splits on 12 synthetic frameworks × 10 analogues verify disjointness and class
+balance; the GNN forward pass is permutation-invariant; fewer than two message-passing layers
+is rejected.</p>
+
+<h2>Appendix 2 — Per-seed results and threshold detail</h2>
+<table>
+<caption>Table A1 — every GNN run. Thresholds are validation-selected by F1 and vary by seed;
+the spread in the scaffold thresholds (0.085–0.496) is itself a symptom of the instability
+diagnosed in § E.2.</caption>
+<tr><th class="l">split</th><th>seed</th><th>best/stop epoch</th><th>thr</th><th>ROC-AUC</th>
+<th>accuracy</th><th>bal. acc</th><th>sens</th><th>spec</th><th>F1</th></tr>
+<tr><td class="l">random</td><td>0</td><td>47 / 77</td><td>0.221</td><td>0.924</td><td>0.884</td><td>0.804</td><td>0.956</td><td>0.652</td><td>0.927</td></tr>
+<tr><td class="l">random</td><td>1</td><td>30 / 60</td><td>0.081</td><td>0.942</td><td>0.895</td><td>0.816</td><td>0.964</td><td>0.667</td><td>0.933</td></tr>
+<tr><td class="l">random</td><td>2</td><td>77 / 107</td><td>0.084</td><td>0.922</td><td>0.850</td><td>0.757</td><td>0.933</td><td>0.580</td><td>0.905</td></tr>
+<tr><td class="l">scaffold</td><td>0</td><td>16 / 46</td><td>0.496</td><td>0.812</td><td>0.840</td><td>0.640</td><td>0.932</td><td>0.348</td><td>0.908</td></tr>
+<tr><td class="l">scaffold</td><td>1</td><td>33 / 63</td><td>0.214</td><td>0.756</td><td>0.820</td><td>0.592</td><td>0.923</td><td>0.261</td><td>0.896</td></tr>
+<tr><td class="l">scaffold</td><td>2</td><td>43 / 73</td><td>0.085</td><td>0.806</td><td>0.840</td><td>0.560</td><td>0.968</td><td>0.152</td><td>0.911</td></tr>
+</table>
+<p><b>On the specificity spread.</b> The scaffold-split specificity is 0.254 ± 0.098 — a
+relative spread of 39%, against 0.031 on ROC-AUC. Threshold-dependent metrics on 46 negative
+test molecules are extremely unstable, and any paper reporting a single-seed specificity on a
+scaffold split of this dataset is reporting noise. This is the quantitative reason § F leads
+with ROC-AUC and treats the thresholded metrics as diagnostic rather than as the result.</p>
+<p><b>The ten conflicting-label groups removed in § A,</b> taken from the source CSV's own
+<code>name</code> field: <b>loperamide</b> (as <i>BRL53080</i> / <i>loperamide</i>),
+<b>aspirin</b> (<i>acetylsalicylate</i> / <i>aspirin</i>), <b>atropine</b> (<i>atropine</i> /
+<i>atropine(hyoscyamine)</i>), <b>trimetrexate</b> (<i>Trimetrexate</i> / <i>trimetrexate</i>),
+<b>indomethacin</b> (<i>indomethacin</i> / <i>indomethacin(indometacin)</i>),
+<b>levodopa</b>, <b>mequitazine</b>, <b>methylprednisolone</b> (<i>Methylprednisolone</i> /
+<i>methylprednisolone</i>), <b>miconazole</b> and <b>loratadine</b>. Each appears twice, once
+with p_np = 0 and once with p_np = 1 — for ten well-characterised drugs the benchmark asserts
+both answers. <b>All ten pairs are written as different SMILES strings</b>, so none is
+detectable without canonicalizing first. The name fields are themselves diagnostic: case
+variants, internal codes and synonym parentheticals are the signature of a compilation merged
+from sources that were never reconciled, which is exactly the provenance that produces
+contradictory labels.</p>

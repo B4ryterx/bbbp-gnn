@@ -1,0 +1,226 @@
+/opt/anaconda3/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+/Users/adebayo/Documents/Quant_Learning_and_Projects/bbbp-gnn/bbbp/train.py:154: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  total += float(loss) * batch.num_graphs
+
+========================================================================
+1. Dataset, canonicalization and cleaning
+========================================================================
+raw CSV rows                     2050
+graphs built by PyG              2039
+  dropped, unparseable SMILES    0
+  dropped, empty graph           0
+  dropped, missing/non-finite y  0
+  dropped, duplicate records     54
+  dropped, conflicting labels    20 (in 10 groups)
+clean molecules                  1965
+
+class counts: negative 465, positive 1500
+positive proportion: 0.7634
+
+conflicting-label groups removed (first few):
+  CN(C)C(=O)C(CCN1CCC(O)(c2ccc(Cl)cc2)CC1)(c1ccccc1)c1ccccc1  labels=[0.0, 1.0]  from ['CN(C)C(=O)C(CCN1CCC(O)(CC1)c1ccc(Cl)cc1)(c1ccccc1)c1ccccc1', 'CN(C)C(=O)C(CCN1CCC(O)(CC1)c2ccc(Cl)cc2)(c3ccccc3)c4ccccc4']
+  CC(=O)Oc1ccccc1C(=O)O  labels=[0.0, 1.0]  from ['CC(=O)Oc1ccccc1C(O)=O', 'C1=CC=CC(=C1C(O)=O)OC(C)=O']
+  CN1C2CCC1CC(OC(=O)C(CO)c1ccccc1)C2  labels=[0.0, 1.0]  from ['CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3', 'C1=CC=CC=C1C(C(OC2CC3N(C)C(C2)CC3)=O)CO']
+  COc1cc(NCc2ccc3nc(N)nc(N)c3c2C)cc(OC)c1OC  labels=[0.0, 1.0]  from ['COc1cc(NCc2ccc3nc(N)nc(N)c3c2C)cc(OC)c1OC', 'C1=C3C(=C(C(=C1)CNC2=CC(=C(C(=C2)OC)OC)OC)C)C(=NC(=N3)N)N']
+  COc1ccc2c(c1)c(CC(=O)O)c(C)n2C(=O)c1ccc(Cl)cc1  labels=[0.0, 1.0]  from ['COc1ccc2n(c(C)c(CC(O)=O)c2c1)C(=O)c3ccc(Cl)cc3', 'C1=CC(=CC2=C1[N](C(=C2CC(O)=O)C)C(C3=CC=C(Cl)C=C3)=O)OC']
+
+duplicate structures collapsed (first few):
+  CC(C)(C)OC(=O)CCCc1ccc(N(CCCl)CCCl)cc1  x2  originals=['C(=O)(OC(C)(C)C)CCCc1ccc(cc1)N(CCCl)CCCl', 'c1cc(ccc1CCCC(OC(C)(C)C)=O)N(CCCl)CCCl']
+  CC1COc2c(N3CCN(C)CC3)c(F)cc3c(=O)c(C(=O)O)cn1c23  x2  originals=['c12c3c(N4CCN(C)CC4)c(F)cc1c(c(C(O)=O)cn2C(C)CO3)=O', 'CC1COc2c(N3CCN(C)CC3)c(F)cc4C(=O)C(=CN1c24)C(O)=O']
+  CC(=O)NCCCOc1cccc(CN2CCCCC2)c1  x2  originals=['C1CCN(CC1)Cc1cccc(c1)OCCCNC(=O)C', 'C1CN(CCC1)Cc1cccc(c1)OCCCNC(=O)C']
+  ClCCl  x2  originals=['C(Cl)Cl', 'ClCCl']
+  CCC(=O)C(CC(C)N(C)C)(c1ccccc1)c1ccccc1  x2  originals=['CCC(=O)C(CC(C)N(C)C)(c1ccccc1)c2ccccc2', 'C1=CC=CC=C1C(C2=CC=CC=C2)(C(CC)=O)CC(N(C)C)C']
+
+atoms per molecule: min 2, median 23, mean 24.2, max 132
+bonds per molecule: min 1, median 25, mean 26.1, max 145
+
+example graph (index 0)
+  x.shape          (4, 9)
+  edge_index.shape (2, 6)
+  edge_attr.shape  (6, 3)
+  y                1.0
+  smiles           BrC(Br)Br
+
+figures: 01_graph_sizes, 02_example_molecules, 03_molecule_two_views
+
+========================================================================
+2. Feature encoding, batching and integrity checks
+========================================================================
+atom feature columns (categorical codes, one embedding table each):
+  x[:,0]  atomic_num               vocabulary 119
+  x[:,1]  chirality                vocabulary 4
+  x[:,2]  degree                   vocabulary 11
+  x[:,3]  formal_charge            vocabulary 12
+  x[:,4]  num_hs                   vocabulary 9
+  x[:,5]  num_radical_electrons    vocabulary 5
+  x[:,6]  hybridization            vocabulary 8
+  x[:,7]  is_aromatic              vocabulary 2
+  x[:,8]  is_in_ring               vocabulary 2
+bond feature columns:
+  edge_attr[:,0]  bond_type          vocabulary 22
+  edge_attr[:,1]  stereo             vocabulary 6
+  edge_attr[:,2]  is_conjugated      vocabulary 2
+  [ok] all labels finite
+  [ok] all labels binary
+  [ok] every graph has >=1 atom
+  [ok] every graph has edge_attr rows == edges
+  [ok] atom feature columns == 9
+  [ok] bond feature columns == 3
+  [ok] canonical SMILES unique
+  [ok] atom codes within vocabulary
+  [ok] bond codes within vocabulary
+
+one batch of 32 molecules:
+  x          (708, 9)   all atoms in the batch, stacked
+  edge_index (2, 1498)   indices into the stacked atoms
+  edge_attr  (1498, 3)   one row per directed edge
+  batch      (708,)   which molecule each atom belongs to
+  y          (32, 1)   one label per molecule
+  [ok] labels match graph count, no molecule lost in batching
+
+========================================================================
+3. Splits
+========================================================================
+unique Bemis-Murcko scaffolds in the clean set: 1020
+acyclic molecules (empty scaffold, kept as one group): 95
+
+--- random split (seed 0)
+  [ok] covers every molecule
+  [ok] train/val disjoint
+  [ok] train/test disjoint
+  [ok] val/test disjoint
+  [ok] sizes sum to total
+  [ok] no SMILES shared train/test
+  [ok] no SMILES shared train/val
+  [ok] no SMILES shared val/test
+  train  n= 1376  positive=0.763  unique scaffolds=766
+  val    n=  295  positive=0.763  unique scaffolds=216
+  test   n=  294  positive=0.765  unique scaffolds=212
+
+--- scaffold split (seed 0)
+  [ok] covers every molecule
+  [ok] train/val disjoint
+  [ok] train/test disjoint
+  [ok] val/test disjoint
+  [ok] sizes sum to total
+  [ok] no SMILES shared train/test
+  [ok] no SMILES shared train/val
+  [ok] no SMILES shared val/test
+  [ok] no scaffold shared train/test
+  [ok] no scaffold shared train/val
+  [ok] no scaffold shared val/test
+  train  n= 1376  positive=0.753  unique scaffolds=431
+  val    n=  295  positive=0.732  unique scaffolds=295
+  test   n=  294  positive=0.844  unique scaffolds=294
+
+========================================================================
+4. Fingerprint baseline: Morgan ECFP4 + logistic regression
+========================================================================
+
+--- random split
+  C chosen on validation: 0.1  (grid [0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0])
+  threshold frozen on validation: 0.528
+  test ROC-AUC 0.913  PR-AUC 0.969  acc 0.854  bal-acc 0.824
+  sensitivity 0.880  specificity 0.768  F1 0.902
+
+--- scaffold split
+  C chosen on validation: 0.1  (grid [0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0])
+  threshold frozen on validation: 0.225
+  test ROC-AUC 0.760  PR-AUC 0.946  acc 0.874  bal-acc 0.607
+  sensitivity 0.996  specificity 0.217  F1 0.930
+
+========================================================================
+5. GNN: GINEConv, seeds [0, 1, 2]
+========================================================================
+GINENet(hidden=128, layers=3, pooling=mean, dropout=0.3, params=250,244)
+node encoding: 9 embedding tables summed -> 128 dims
+edge encoding: 3 embedding tables summed -> 128 dims, per layer
+pooling: mean over atoms -> one vector per molecule
+
+--- random split
+  seed 0: best epoch  47/ 77  thr 0.221  test AUC 0.924  bal-acc 0.804  (51s)
+    curves: validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 47, 30 epochs before the end
+  seed 1: best epoch  30/ 60  thr 0.081  test AUC 0.942  bal-acc 0.816  (40s)
+    curves: validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 30, 30 epochs before the end
+  seed 2: best epoch  77/107  thr 0.084  test AUC 0.922  bal-acc 0.757  (71s)
+    curves: validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 77, 30 epochs before the end
+  mean +/- sd over 3 seeds:
+    roc_auc              0.929 +/- 0.011
+    pr_auc               0.978 +/- 0.003
+    accuracy             0.876 +/- 0.023
+    balanced_accuracy    0.792 +/- 0.031
+    sensitivity          0.951 +/- 0.016
+    specificity          0.633 +/- 0.047
+    f1                   0.922 +/- 0.015
+
+--- scaffold split
+  seed 0: best epoch  16/ 46  thr 0.496  test AUC 0.812  bal-acc 0.640  (31s)
+    curves: validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 16, 30 epochs before the end; validation ROC-AUC is unstable (step sd 0.049)
+  seed 1: best epoch  33/ 63  thr 0.214  test AUC 0.756  bal-acc 0.592  (43s)
+    curves: validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 33, 30 epochs before the end
+  seed 2: best epoch  43/ 73  thr 0.085  test AUC 0.806  bal-acc 0.560  (48s)
+    curves: validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 43, 30 epochs before the end; validation ROC-AUC is unstable (step sd 0.030)
+  mean +/- sd over 3 seeds:
+    roc_auc              0.791 +/- 0.031
+    pr_auc               0.957 +/- 0.007
+    accuracy             0.833 +/- 0.012
+    balanced_accuracy    0.597 +/- 0.040
+    sensitivity          0.941 +/- 0.024
+    specificity          0.254 +/- 0.098
+    f1                   0.905 +/- 0.008
+
+========================================================================
+6. Comparison
+========================================================================
+model       split        thr           ROC-AUC            PR-AUC           bal-acc              sens              spec                F1
+----------------------------------------------------------------------------------------------------------------------------------------
+ECFP+LR     random      0.53             0.913             0.969             0.824             0.880             0.768             0.902
+ECFP+LR     scaffold    0.22             0.760             0.946             0.607             0.996             0.217             0.930
+GNN (GINE)  random      0.13   0.929 +/- 0.011   0.978 +/- 0.003   0.792 +/- 0.031   0.951 +/- 0.016   0.633 +/- 0.047   0.922 +/- 0.015
+GNN (GINE)  scaffold    0.26   0.791 +/- 0.031   0.957 +/- 0.007   0.597 +/- 0.040   0.941 +/- 0.024   0.254 +/- 0.098   0.905 +/- 0.008
+
+========================================================================
+7. Error and similarity analysis (scaffold test set)
+========================================================================
+  n                                    294
+  accuracy                             0.8401
+  mean_similarity_correct              0.3979
+  mean_similarity_wrong                0.3395
+  median_similarity                    0.3542
+  mannwhitney_u                        7498.5000
+  p_value_correct_more_similar         0.0008
+  accuracy_least_similar_third         0.7245
+  accuracy_most_similar_third          0.9082
+  similarity_cut_least_third           0.3077
+  similarity_cut_most_third            0.4259
+
+  2 false positives and 2 false negatives selected
+
+  FP  p=0.984  true=0
+    CC(=O)N1CCN(c2ccc(OC[C@H]3CO[C@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1
+    nearest training molecule: Tanimoto 0.267, label 1 (disagrees)
+    O=C(COc1ccc(Cl)cc1)N1CCN(Cc2ccc3c(c2)OCO3)CC1
+
+  FP  p=0.974  true=0
+    CC(C)N1CCN(c2ccc(OC[C@H]3CO[C@](Cn4cncn4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1
+    nearest training molecule: Tanimoto 0.247, label 1 (disagrees)
+    Cl/C(=C\n1cncn1)c1ccc(Cl)cc1Cl
+
+  FN  p=0.013  true=1
+    OCc1ccccc1O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O
+    nearest training molecule: Tanimoto 0.333, label 0 (disagrees)
+    NCC1OC(OC2C(N)CC(N)C(OC3OC(CO)C(O)C(N)C3O)C2O)C(O)C(O)C1O
+
+  FN  p=0.018  true=1
+    Cc1ncc(CSSCc2cnc(C)c(O)c2CO)c(CO)c1O
+    nearest training molecule: Tanimoto 0.512, label 1 (agrees)
+    CCNCc1c(CSC)cnc(C)c1O
+
+========================================================================
+8. Done
+========================================================================
+elapsed 302.6s
+results/results.json, results/comparison.csv, results/error_rows_scaffold.csv
+figures in /Users/adebayo/Documents/Quant_Learning_and_Projects/bbbp-gnn/results/figures

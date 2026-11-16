@@ -1,0 +1,814 @@
+{
+  "config": {
+    "fingerprint": {
+      "radius": 2,
+      "n_bits": 2048,
+      "use_chirality": false
+    },
+    "baseline": {
+      "seed": 0,
+      "C_grid": [
+        0.01,
+        0.03,
+        0.1,
+        0.3,
+        1.0,
+        3.0,
+        10.0
+      ],
+      "class_weight": "balanced",
+      "max_iter": 5000
+    },
+    "gnn": {
+      "hidden": 128,
+      "n_layers": 3,
+      "dropout": 0.3,
+      "pooling": "mean",
+      "lr": 0.001,
+      "weight_decay": 1e-05,
+      "batch_size": 64,
+      "max_epochs": 200,
+      "patience": 30,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "device": "auto"
+    },
+    "split_seed": 0,
+    "train_frac": 0.7,
+    "val_frac": 0.15,
+    "test_frac": 0.15
+  },
+  "cleaning": {
+    "n_raw_csv": 2050,
+    "n_loaded": 2039,
+    "n_unparseable": 0,
+    "n_empty_graph": 0,
+    "n_bad_label": 0,
+    "n_duplicate_records_removed": 54,
+    "n_conflict_groups": 10,
+    "n_conflict_records_removed": 20,
+    "n_clean": 1965,
+    "conflict_examples": [
+      {
+        "canonical_smiles": "CN(C)C(=O)C(CCN1CCC(O)(c2ccc(Cl)cc2)CC1)(c1ccccc1)c1ccccc1",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "CN(C)C(=O)C(CCN1CCC(O)(CC1)c1ccc(Cl)cc1)(c1ccccc1)c1ccccc1",
+          "CN(C)C(=O)C(CCN1CCC(O)(CC1)c2ccc(Cl)cc2)(c3ccccc3)c4ccccc4"
+        ]
+      },
+      {
+        "canonical_smiles": "CC(=O)Oc1ccccc1C(=O)O",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "CC(=O)Oc1ccccc1C(O)=O",
+          "C1=CC=CC(=C1C(O)=O)OC(C)=O"
+        ]
+      },
+      {
+        "canonical_smiles": "CN1C2CCC1CC(OC(=O)C(CO)c1ccccc1)C2",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+          "C1=CC=CC=C1C(C(OC2CC3N(C)C(C2)CC3)=O)CO"
+        ]
+      },
+      {
+        "canonical_smiles": "COc1cc(NCc2ccc3nc(N)nc(N)c3c2C)cc(OC)c1OC",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "COc1cc(NCc2ccc3nc(N)nc(N)c3c2C)cc(OC)c1OC",
+          "C1=C3C(=C(C(=C1)CNC2=CC(=C(C(=C2)OC)OC)OC)C)C(=NC(=N3)N)N"
+        ]
+      },
+      {
+        "canonical_smiles": "COc1ccc2c(c1)c(CC(=O)O)c(C)n2C(=O)c1ccc(Cl)cc1",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "COc1ccc2n(c(C)c(CC(O)=O)c2c1)C(=O)c3ccc(Cl)cc3",
+          "C1=CC(=CC2=C1[N](C(=C2CC(O)=O)C)C(C3=CC=C(Cl)C=C3)=O)OC"
+        ]
+      },
+      {
+        "canonical_smiles": "N[C@@H](Cc1ccc(O)c(O)c1)C(=O)O",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "N[C@@H](Cc1ccc(O)c(O)c1)C(O)=O",
+          "[C@H](CC1=CC(=C(C=C1)O)O)(C(O)=O)N"
+        ]
+      },
+      {
+        "canonical_smiles": "c1ccc2c(c1)Sc1ccccc1N2CC1CN2CCC1CC2",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "C1CN2CCC1C(C2)CN3c4ccccc4Sc5ccccc35",
+          "C1=CC=CC2=C1SC5=C(N2CC3C4CCN(C3)CC4)C=CC=C5"
+        ]
+      },
+      {
+        "canonical_smiles": "C[C@H]1C[C@@H]2[C@H]([C@@H](O)C[C@@]3(C)[C@H]2CC[C@]3(O)C(=O)CO)[C@@]2(C)C=CC(=O)C=C12",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "C[C@H]1C[C@H]2[C@@H]3CC[C@](O)(C(=O)CO)[C@@]3(C)C[C@H](O)[C@@H]2[C@@]4(C)C=CC(=O)C=C14",
+          "[C@H]24[C@H]1[C@@]([C@](C(CO)=O)(O)CC1)(C[C@@H]([C@@H]2[C@@]3(C(=CC(=O)C=C3)[C@H](C4)C)C)O)C"
+        ]
+      },
+      {
+        "canonical_smiles": "Clc1ccc(COC(Cn2ccnc2)c2ccc(Cl)cc2Cl)c(Cl)c1",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "Clc1ccc(COC(Cn2ccnc2)c3ccc(Cl)cc3Cl)c(Cl)c1",
+          "C1=C(C=CC(=C1Cl)COC(C[N]2C=NC=C2)C3=C(C=C(C=C3)Cl)Cl)Cl"
+        ]
+      },
+      {
+        "canonical_smiles": "CCOC(=O)N1CCC(=C2c3ccc(Cl)cc3CCc3cccnc32)CC1",
+        "n_records": 2,
+        "labels": [
+          0.0,
+          1.0
+        ],
+        "original_smiles": [
+          "CCOC(=O)N1CCC(CC1)=C2c3ccc(Cl)cc3CCc4cccnc24",
+          "C1=CC(=CC2=C1C(C3=C(CC2)C=CC=N3)=C4CCN(C(OCC)=O)CC4)Cl"
+        ]
+      }
+    ],
+    "duplicate_examples": [
+      {
+        "canonical_smiles": "CC(C)(C)OC(=O)CCCc1ccc(N(CCCl)CCCl)cc1",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "C(=O)(OC(C)(C)C)CCCc1ccc(cc1)N(CCCl)CCCl",
+          "c1cc(ccc1CCCC(OC(C)(C)C)=O)N(CCCl)CCCl"
+        ]
+      },
+      {
+        "canonical_smiles": "CC1COc2c(N3CCN(C)CC3)c(F)cc3c(=O)c(C(=O)O)cn1c23",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "c12c3c(N4CCN(C)CC4)c(F)cc1c(c(C(O)=O)cn2C(C)CO3)=O",
+          "CC1COc2c(N3CCN(C)CC3)c(F)cc4C(=O)C(=CN1c24)C(O)=O"
+        ]
+      },
+      {
+        "canonical_smiles": "CC(=O)NCCCOc1cccc(CN2CCCCC2)c1",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "C1CCN(CC1)Cc1cccc(c1)OCCCNC(=O)C",
+          "C1CN(CCC1)Cc1cccc(c1)OCCCNC(=O)C"
+        ]
+      },
+      {
+        "canonical_smiles": "ClCCl",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "C(Cl)Cl",
+          "ClCCl"
+        ]
+      },
+      {
+        "canonical_smiles": "CCC(=O)C(CC(C)N(C)C)(c1ccccc1)c1ccccc1",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "CCC(=O)C(CC(C)N(C)C)(c1ccccc1)c2ccccc2",
+          "C1=CC=CC=C1C(C2=CC=CC=C2)(C(CC)=O)CC(N(C)C)C"
+        ]
+      },
+      {
+        "canonical_smiles": "CN(C)Cc1ccc(CSCCNc2nc(=O)c(Cc3ccc4ccccc4c3)c[nH]2)o1",
+        "n_records": 2,
+        "label": 0.0,
+        "original_smiles": [
+          "c1cc2c(cc(CC3=CNC(=NC3=O)NCCSCc3oc(cc3)CN(C)C)cc2)cc1",
+          "c1c(oc(c1)CN(C)C)CSCCNc1nc(c(c[nH]1)Cc1cc2c(cc1)cccc2)=O"
+        ]
+      },
+      {
+        "canonical_smiles": "FC(F)(F)c1ccc(N2CCNCC2)nc1Cl",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "FC(F)(F)c1c(Cl)nc(N2CCNCC2)cc1",
+          "C1NCCN(C1)c1ccc(c(n1)Cl)C(F)(F)F"
+        ]
+      },
+      {
+        "canonical_smiles": "O=C(NCCCOc1cccc(CN2CCCCC2)c1)c1ccccc1",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "c1ccc(C(NCCCOc2cc(CN3CCCCC3)ccc2)=O)cc1",
+          "C1CN(CCC1)Cc1cccc(c1)OCCCNC(=O)c1ccccc1"
+        ]
+      },
+      {
+        "canonical_smiles": "CN1Cc2c(C(=O)OC(C)(C)C)ncn2-c2ccsc2C1=O",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "CC(C)(C)OC(=O)C1=C2CN(C(=O)C3=C(N2C=N1)C=CS3)C",
+          "CN1Cc2n(cnc2C(=O)OC(C)(C)C)c3ccsc3C1=O"
+        ]
+      },
+      {
+        "canonical_smiles": "CNCCCN1c2ccccc2Sc2ccc(Cl)cc21",
+        "n_records": 2,
+        "label": 1.0,
+        "original_smiles": [
+          "ClC1=CC=C(C2=C1)SC3=C(N2CCCNC)C=CC=C3",
+          "N1(c2c(Sc3c1cccc3)ccc(c2)Cl)CCCNC"
+        ]
+      }
+    ]
+  },
+  "graph_sizes": {
+    "atoms": {
+      "min": 2,
+      "median": 23.0,
+      "mean": 24.223409669211197,
+      "max": 132
+    },
+    "bonds": {
+      "min": 1,
+      "median": 25.0,
+      "mean": 26.12824427480916,
+      "max": 145
+    }
+  },
+  "example_graph": {
+    "x_shape": [
+      4,
+      9
+    ],
+    "edge_index_shape": [
+      2,
+      6
+    ],
+    "edge_attr_shape": [
+      6,
+      3
+    ],
+    "y": 1.0,
+    "smiles": "BrC(Br)Br"
+  },
+  "integrity_checks": {
+    "all labels finite": true,
+    "all labels binary": true,
+    "every graph has >=1 atom": true,
+    "every graph has edge_attr rows == edges": true,
+    "atom feature columns == 9": true,
+    "bond feature columns == 3": true,
+    "canonical SMILES unique": true,
+    "atom codes within vocabulary": true,
+    "bond codes within vocabulary": true
+  },
+  "example_batch": {
+    "x": [
+      708,
+      9
+    ],
+    "edge_index": [
+      2,
+      1498
+    ],
+    "edge_attr": [
+      1498,
+      3
+    ],
+    "batch": [
+      708
+    ],
+    "y": [
+      32,
+      1
+    ]
+  },
+  "n_unique_scaffolds": 1020,
+  "n_acyclic": 95,
+  "splits": [
+    {
+      "split": "random",
+      "subset": "train",
+      "n": 1376,
+      "n_positive": 1050,
+      "positive_frac": 0.7630813953488372,
+      "unique_scaffolds": 766
+    },
+    {
+      "split": "random",
+      "subset": "val",
+      "n": 295,
+      "n_positive": 225,
+      "positive_frac": 0.7627118644067796,
+      "unique_scaffolds": 216
+    },
+    {
+      "split": "random",
+      "subset": "test",
+      "n": 294,
+      "n_positive": 225,
+      "positive_frac": 0.7653061224489796,
+      "unique_scaffolds": 212
+    },
+    {
+      "split": "scaffold",
+      "subset": "train",
+      "n": 1376,
+      "n_positive": 1036,
+      "positive_frac": 0.752906976744186,
+      "unique_scaffolds": 431
+    },
+    {
+      "split": "scaffold",
+      "subset": "val",
+      "n": 295,
+      "n_positive": 216,
+      "positive_frac": 0.7322033898305085,
+      "unique_scaffolds": 295
+    },
+    {
+      "split": "scaffold",
+      "subset": "test",
+      "n": 294,
+      "n_positive": 248,
+      "positive_frac": 0.8435374149659864,
+      "unique_scaffolds": 294
+    }
+  ],
+  "baseline": {
+    "random": {
+      "metrics": {
+        "threshold": 0.5283753556935081,
+        "roc_auc": 0.9132367149758454,
+        "pr_auc": 0.9687956338350319,
+        "accuracy": 0.8537414965986394,
+        "balanced_accuracy": 0.8240579710144927,
+        "sensitivity": 0.88,
+        "specificity": 0.7681159420289855,
+        "precision": 0.9252336448598131,
+        "f1": 0.9020501138952165,
+        "tn": 53,
+        "fp": 16,
+        "fn": 27,
+        "tp": 198,
+        "n": 294,
+        "positive_frac": 0.7653061224489796
+      },
+      "settings": {
+        "fingerprint_radius": 2,
+        "fingerprint_bits": 2048,
+        "include_chirality": false,
+        "class_weight": "balanced",
+        "C": 0.1,
+        "seed": 0,
+        "solver": "liblinear",
+        "threshold_objective": "f1"
+      },
+      "search": [
+        {
+          "C": 0.01,
+          "val_roc_auc": 0.9090793650793652
+        },
+        {
+          "C": 0.03,
+          "val_roc_auc": 0.9246349206349206
+        },
+        {
+          "C": 0.1,
+          "val_roc_auc": 0.9333968253968253
+        },
+        {
+          "C": 0.3,
+          "val_roc_auc": 0.9328253968253969
+        },
+        {
+          "C": 1.0,
+          "val_roc_auc": 0.928952380952381
+        },
+        {
+          "C": 3.0,
+          "val_roc_auc": 0.9248253968253968
+        },
+        {
+          "C": 10.0,
+          "val_roc_auc": 0.9207619047619048
+        }
+      ]
+    },
+    "scaffold": {
+      "metrics": {
+        "threshold": 0.2249382428227694,
+        "roc_auc": 0.759905329593268,
+        "pr_auc": 0.9457376182489937,
+        "accuracy": 0.8741496598639455,
+        "balanced_accuracy": 0.606679523141655,
+        "sensitivity": 0.9959677419354839,
+        "specificity": 0.21739130434782608,
+        "precision": 0.872791519434629,
+        "f1": 0.9303201506591336,
+        "tn": 10,
+        "fp": 36,
+        "fn": 1,
+        "tp": 247,
+        "n": 294,
+        "positive_frac": 0.8435374149659864
+      },
+      "settings": {
+        "fingerprint_radius": 2,
+        "fingerprint_bits": 2048,
+        "include_chirality": false,
+        "class_weight": "balanced",
+        "C": 0.1,
+        "seed": 0,
+        "solver": "liblinear",
+        "threshold_objective": "f1"
+      },
+      "search": [
+        {
+          "C": 0.01,
+          "val_roc_auc": 0.8820909517112049
+        },
+        {
+          "C": 0.03,
+          "val_roc_auc": 0.8904711673699015
+        },
+        {
+          "C": 0.1,
+          "val_roc_auc": 0.8906469760900141
+        },
+        {
+          "C": 0.3,
+          "val_roc_auc": 0.8796882325363338
+        },
+        {
+          "C": 1.0,
+          "val_roc_auc": 0.8657993436474449
+        },
+        {
+          "C": 3.0,
+          "val_roc_auc": 0.8516174402250353
+        },
+        {
+          "C": 10.0,
+          "val_roc_auc": 0.8390764181903422
+        }
+      ]
+    }
+  },
+  "seed_vs_split": {
+    "seed_sd": 0.020864359188533785,
+    "split_effect": 0.13793608124253298,
+    "ratio": 6.611086398394499
+  },
+  "gnn_architecture": {
+    "description": "GINENet(hidden=128, layers=3, pooling=mean, dropout=0.3, params=250,244)",
+    "n_parameters": 250244,
+    "hidden": 128,
+    "layers": 3,
+    "dropout": 0.3,
+    "pooling": "mean",
+    "lr": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 64,
+    "max_epochs": 200,
+    "patience": 30,
+    "loss": "BCEWithLogitsLoss, pos_weight = n_neg/n_pos from train only",
+    "optimizer": "Adam",
+    "model_selection": "best validation ROC-AUC, weights restored"
+  },
+  "gnn": {
+    "random": {
+      "runs": [
+        {
+          "seed": 0,
+          "threshold": 0.22095784544944763,
+          "best_epoch": 47,
+          "stopped_epoch": 77,
+          "diagnosis": "validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 47, 30 epochs before the end",
+          "metrics": {
+            "threshold": 0.22095784544944763,
+            "roc_auc": 0.9238647342995169,
+            "pr_auc": 0.9758123799257579,
+            "accuracy": 0.8843537414965986,
+            "balanced_accuracy": 0.8038647342995169,
+            "sensitivity": 0.9555555555555556,
+            "specificity": 0.6521739130434783,
+            "precision": 0.899581589958159,
+            "f1": 0.9267241379310346,
+            "tn": 45,
+            "fp": 24,
+            "fn": 10,
+            "tp": 215,
+            "n": 294,
+            "positive_frac": 0.7653061224489796
+          }
+        },
+        {
+          "seed": 1,
+          "threshold": 0.08053228259086609,
+          "best_epoch": 30,
+          "stopped_epoch": 60,
+          "diagnosis": "validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 30, 30 epochs before the end",
+          "metrics": {
+            "threshold": 0.08053228259086609,
+            "roc_auc": 0.9419645732689211,
+            "pr_auc": 0.9815119450795262,
+            "accuracy": 0.8945578231292517,
+            "balanced_accuracy": 0.8155555555555556,
+            "sensitivity": 0.9644444444444444,
+            "specificity": 0.6666666666666666,
+            "precision": 0.9041666666666667,
+            "f1": 0.9333333333333333,
+            "tn": 46,
+            "fp": 23,
+            "fn": 8,
+            "tp": 217,
+            "n": 294,
+            "positive_frac": 0.7653061224489796
+          }
+        },
+        {
+          "seed": 2,
+          "threshold": 0.08386215567588806,
+          "best_epoch": 77,
+          "stopped_epoch": 107,
+          "diagnosis": "validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 77, 30 epochs before the end",
+          "metrics": {
+            "threshold": 0.08386215567588806,
+            "roc_auc": 0.9221900161030596,
+            "pr_auc": 0.9759966793255626,
+            "accuracy": 0.8503401360544217,
+            "balanced_accuracy": 0.7565217391304349,
+            "sensitivity": 0.9333333333333333,
+            "specificity": 0.5797101449275363,
+            "precision": 0.8786610878661087,
+            "f1": 0.9051724137931035,
+            "tn": 40,
+            "fp": 29,
+            "fn": 15,
+            "tp": 210,
+            "n": 294,
+            "positive_frac": 0.7653061224489796
+          }
+        }
+      ],
+      "summary": {
+        "roc_auc": "0.929 +/- 0.011",
+        "pr_auc": "0.978 +/- 0.003",
+        "accuracy": "0.876 +/- 0.023",
+        "balanced_accuracy": "0.792 +/- 0.031",
+        "sensitivity": "0.951 +/- 0.016",
+        "specificity": "0.633 +/- 0.047",
+        "f1": "0.922 +/- 0.015"
+      }
+    },
+    "scaffold": {
+      "runs": [
+        {
+          "seed": 0,
+          "threshold": 0.4957045614719391,
+          "best_epoch": 16,
+          "stopped_epoch": 46,
+          "diagnosis": "validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 16, 30 epochs before the end; validation ROC-AUC is unstable (step sd 0.049)",
+          "metrics": {
+            "threshold": 0.4957045614719391,
+            "roc_auc": 0.8120617110799438,
+            "pr_auc": 0.9619108924225632,
+            "accuracy": 0.8401360544217688,
+            "balanced_accuracy": 0.6396388499298737,
+            "sensitivity": 0.9314516129032258,
+            "specificity": 0.34782608695652173,
+            "precision": 0.8850574712643678,
+            "f1": 0.9076620825147347,
+            "tn": 16,
+            "fp": 30,
+            "fn": 17,
+            "tp": 231,
+            "n": 294,
+            "positive_frac": 0.8435374149659864
+          }
+        },
+        {
+          "seed": 1,
+          "threshold": 0.21386520564556122,
+          "best_epoch": 33,
+          "stopped_epoch": 63,
+          "diagnosis": "validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 33, 30 epochs before the end",
+          "metrics": {
+            "threshold": 0.21386520564556122,
+            "roc_auc": 0.7560483870967741,
+            "pr_auc": 0.9479637010412452,
+            "accuracy": 0.8197278911564626,
+            "balanced_accuracy": 0.5921283309957924,
+            "sensitivity": 0.9233870967741935,
+            "specificity": 0.2608695652173913,
+            "precision": 0.870722433460076,
+            "f1": 0.8962818003913895,
+            "tn": 12,
+            "fp": 34,
+            "fn": 19,
+            "tp": 229,
+            "n": 294,
+            "positive_frac": 0.8435374149659864
+          }
+        },
+        {
+          "seed": 2,
+          "threshold": 0.08502330631017685,
+          "best_epoch": 43,
+          "stopped_epoch": 73,
+          "diagnosis": "validation loss well above training loss at the end: overfitting; best validation ROC-AUC at epoch 43, 30 epochs before the end; validation ROC-AUC is unstable (step sd 0.030)",
+          "metrics": {
+            "threshold": 0.08502330631017685,
+            "roc_auc": 0.806100981767181,
+            "pr_auc": 0.9596837865688282,
+            "accuracy": 0.8401360544217688,
+            "balanced_accuracy": 0.5599579242636746,
+            "sensitivity": 0.967741935483871,
+            "specificity": 0.15217391304347827,
+            "precision": 0.8602150537634409,
+            "f1": 0.9108159392789374,
+            "tn": 7,
+            "fp": 39,
+            "fn": 8,
+            "tp": 240,
+            "n": 294,
+            "positive_frac": 0.8435374149659864
+          }
+        }
+      ],
+      "summary": {
+        "roc_auc": "0.791 +/- 0.031",
+        "pr_auc": "0.957 +/- 0.007",
+        "accuracy": "0.833 +/- 0.012",
+        "balanced_accuracy": "0.597 +/- 0.040",
+        "sensitivity": "0.941 +/- 0.024",
+        "specificity": "0.254 +/- 0.098",
+        "f1": "0.905 +/- 0.008"
+      }
+    }
+  },
+  "comparison_table": [
+    {
+      "model": "ECFP+LR",
+      "split": "random",
+      "n_runs": 1,
+      "threshold": "0.528",
+      "roc_auc": "0.913",
+      "pr_auc": "0.969",
+      "accuracy": "0.854",
+      "balanced_accuracy": "0.824",
+      "sensitivity": "0.880",
+      "specificity": "0.768",
+      "f1": "0.902"
+    },
+    {
+      "model": "ECFP+LR",
+      "split": "scaffold",
+      "n_runs": 1,
+      "threshold": "0.225",
+      "roc_auc": "0.760",
+      "pr_auc": "0.946",
+      "accuracy": "0.874",
+      "balanced_accuracy": "0.607",
+      "sensitivity": "0.996",
+      "specificity": "0.217",
+      "f1": "0.930"
+    },
+    {
+      "model": "GNN (GINE)",
+      "split": "random",
+      "n_runs": 3,
+      "threshold": "0.128",
+      "roc_auc": "0.929 +/- 0.011",
+      "pr_auc": "0.978 +/- 0.003",
+      "accuracy": "0.876 +/- 0.023",
+      "balanced_accuracy": "0.792 +/- 0.031",
+      "sensitivity": "0.951 +/- 0.016",
+      "specificity": "0.633 +/- 0.047",
+      "f1": "0.922 +/- 0.015"
+    },
+    {
+      "model": "GNN (GINE)",
+      "split": "scaffold",
+      "n_runs": 3,
+      "threshold": "0.265",
+      "roc_auc": "0.791 +/- 0.031",
+      "pr_auc": "0.957 +/- 0.007",
+      "accuracy": "0.833 +/- 0.012",
+      "balanced_accuracy": "0.597 +/- 0.040",
+      "sensitivity": "0.941 +/- 0.024",
+      "specificity": "0.254 +/- 0.098",
+      "f1": "0.905 +/- 0.008"
+    }
+  ],
+  "error_analysis": {
+    "n": 294,
+    "accuracy": 0.8401360544217688,
+    "mean_similarity_correct": 0.39793302767310545,
+    "mean_similarity_wrong": 0.33954093177267847,
+    "median_similarity": 0.3541666567325592,
+    "mannwhitney_u": 7498.5,
+    "p_value_correct_more_similar": 0.000761815911334732,
+    "accuracy_least_similar_third": 0.7244897959183674,
+    "accuracy_most_similar_third": 0.9081632653061225,
+    "similarity_cut_least_third": 0.3076923191547394,
+    "similarity_cut_most_third": 0.42592594027519226
+  },
+  "error_examples": [
+    {
+      "smiles": "CC(=O)N1CCN(c2ccc(OC[C@H]3CO[C@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+      "y_true": 0,
+      "y_pred": 1,
+      "prob": 0.9837312698364258,
+      "correct": false,
+      "kind": "FP",
+      "nn_similarity": 0.2666666805744171,
+      "nn_smiles": "O=C(COc1ccc(Cl)cc1)N1CCN(Cc2ccc3c(c2)OCO3)CC1",
+      "nn_label": 1,
+      "nn_label_agrees": false
+    },
+    {
+      "smiles": "CC(C)N1CCN(c2ccc(OC[C@H]3CO[C@](Cn4cncn4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+      "y_true": 0,
+      "y_pred": 1,
+      "prob": 0.9744928479194641,
+      "correct": false,
+      "kind": "FP",
+      "nn_similarity": 0.2469135820865631,
+      "nn_smiles": "Cl/C(=C\\n1cncn1)c1ccc(Cl)cc1Cl",
+      "nn_label": 1,
+      "nn_label_agrees": false
+    },
+    {
+      "smiles": "OCc1ccccc1O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O",
+      "y_true": 1,
+      "y_pred": 0,
+      "prob": 0.013464037328958511,
+      "correct": false,
+      "kind": "FN",
+      "nn_similarity": 0.3333333432674408,
+      "nn_smiles": "NCC1OC(OC2C(N)CC(N)C(OC3OC(CO)C(O)C(N)C3O)C2O)C(O)C(O)C1O",
+      "nn_label": 0,
+      "nn_label_agrees": false
+    },
+    {
+      "smiles": "Cc1ncc(CSSCc2cnc(C)c(O)c2CO)c(CO)c1O",
+      "y_true": 1,
+      "y_pred": 0,
+      "prob": 0.01792527548968792,
+      "correct": false,
+      "kind": "FN",
+      "nn_similarity": 0.5121951103210449,
+      "nn_smiles": "CCNCc1c(CSC)cnc(C)c1O",
+      "nn_label": 1,
+      "nn_label_agrees": true
+    }
+  ],
+  "runtime_note": "executed top to bottom"
+}
