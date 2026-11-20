@@ -1,0 +1,10 @@
+Tools and AI use — Brandon-Jason Adebayo (25011100), ENG2440 A3
+
+Software and libraries:
+PyTorch and PyTorch Geometric, RDKit (cheminformatics, pinned 2025.03.6),
+scikit-learn, NumPy, SciPy and Matplotlib.
+
+AI assistance:
+Generative-AI assistance (Anthropic Claude) was used to help develop and debug
+the pipeline code and to draft this report. All results were produced by the
+author's own executed notebook and are the author's responsibility.
