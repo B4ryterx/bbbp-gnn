@@ -2,41 +2,51 @@
 <meta charset="utf-8">
 <title>BBBP GNN report</title>
 <style>
-  @page { size: A4; margin: 20mm 20mm 18mm 20mm; }
-  html { font-size: 10.5pt; }
-  body { font-family: Calibri, "Helvetica Neue", Arial, sans-serif; line-height: 1.32; color: #111; margin: 0; }
-  h1 { font-size: 18pt; font-weight: 700; margin: 0 0 2pt; line-height: 1.15; }
-  .subtitle { font-size: 11.5pt; color: #333; margin: 0 0 8pt; }
-  h2 { font-size: 13pt; font-weight: 700; margin: 16pt 0 4pt; color: #111; }
-  h3 { font-size: 11.5pt; font-weight: 700; margin: 10pt 0 3pt; }
-  p { margin: 0 0 7pt; text-align: justify; }
-  .meta { font-size: 10pt; color: #222; margin: 0 0 12pt; line-height: 1.5; }
+  @page { size: A4; margin: 11mm 12mm 10mm 12mm; }
+  html { font-size: 8.7pt; }
+  body { font-family: Calibri, "Helvetica Neue", Arial, sans-serif; line-height: 1.26; color: #111; margin: 0; }
+  h1 { font-size: 15.5pt; font-weight: 700; margin: 0 0 1pt; line-height: 1.15; }
+  .subtitle { font-size: 10.3pt; color: #3c4147; margin: 0 0 4pt; }
+  h2 { font-size: 10.8pt; font-weight: 700; margin: 9pt 0 2.5pt; padding-bottom: 1.5pt;
+       border-bottom: 0.7pt solid #b9bfc7; }
+  h3 { font-size: 9.6pt; font-weight: 700; margin: 5pt 0 1.5pt; }
+  p { margin: 0 0 3.5pt; text-align: justify; }
+  .meta { font-size: 8.4pt; color: #333; border-top: 0.7pt solid #b9bfc7;
+          border-bottom: 0.7pt solid #b9bfc7; padding: 3pt 0; margin: 4pt 0 6pt; line-height: 1.35; }
   .meta b { color: #111; }
-  .meta .note { display: block; font-size: 9pt; color: #555; font-style: italic; margin-top: 4pt; }
-  table { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin: 6pt 0 10pt; }
-  th, td { border-bottom: 0.5pt solid #ccc; padding: 3pt 5pt; text-align: right; }
-  th { border-bottom: 1pt solid #888; text-align: right; font-weight: 700; }
+  .meta .note { display: block; font-size: 7.8pt; color: #555; font-style: italic; margin-top: 2pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 7.9pt; margin: 2.5pt 0 4pt; }
+  th, td { border-bottom: 0.5pt solid #d2d6db; padding: 1.4pt 2.6pt; text-align: right; }
+  th { border-bottom: 0.8pt solid #8d949c; text-align: right; font-weight: 700; }
   th:first-child, td:first-child, .l { text-align: left; }
-  caption { caption-side: top; text-align: left; font-size: 9.5pt; color: #333;
-            padding-bottom: 3pt; font-style: italic; }
-  .row { display: block; margin: 0; }
-  .row > div { width: 100%; margin: 0; }
-  img { display: block; margin: 8pt auto; max-width: 78%; max-height: 112mm; }
-  .cap { font-size: 9pt; color: #444; margin: -2pt 0 10pt; text-align: center; line-height: 1.3; }
-  .key { background: #f4f6f8; border-left: 3pt solid #3B6FB6; padding: 7pt 10pt;
-         margin: 9pt 0; font-size: 10pt; }
-  .key p { margin: 0 0 5pt; }
+  caption { caption-side: top; text-align: left; font-size: 8.1pt; color: #333;
+            padding-bottom: 2pt; font-style: italic; }
+  .row { display: flex; gap: 6pt; align-items: flex-start; margin: 2.5pt 0 4pt; }
+  .row > div { flex: 1; break-inside: avoid; }
+  img { width: 100%; display: block; }
+  img[src$="02_example_molecules.png"] { max-height: 50mm; width: auto; margin: 0 auto; }
+  img[src$="03_molecule_two_views.png"] { max-height: 36mm; width: auto; margin: 0 auto; }
+  img[src$="07_errors_and_neighbours.png"] { max-height: 58mm; width: auto; margin: 0 auto; }
+  img[src$="01_graph_sizes.png"] { max-height: 31mm; width: auto; }
+  img[src^="../results/figures/04_"] { max-height: 31mm; width: auto; }
+  img[src^="../results/figures/05_"] { max-height: 40mm; width: auto; }
+  img[src^="../results/figures/06_"] { max-height: 34mm; width: auto; margin: 0 auto; }
+  img[src$="08_similarity_vs_accuracy.png"] { max-height: 44mm; width: auto; margin: 0 auto; }
+  .cap { font-size: 7.3pt; color: #444; margin-top: 1.5pt; line-height: 1.25; }
+  .key { background: #f2f4f6; border-left: 2.2pt solid #3B6FB6; padding: 3.5pt 5pt;
+         margin: 4pt 0; font-size: 8.4pt; }
+  .key p { margin: 0 0 2.5pt; }
   .key p:last-child { margin: 0; }
-  code { font-family: Consolas,"SF Mono",Menlo,monospace; font-size: 9.5pt; background: #f1f3f5;
-         padding: 0 2pt; }
-  ol, ul { margin: 4pt 0 8pt; padding-left: 20pt; }
-  li { margin-bottom: 4pt; text-align: justify; }
-  .eq { text-align: center; margin: 6pt 0; font-size: 11pt; }
-  .refs { font-size: 9.5pt; } .refs li { margin-bottom: 3pt; }
+  code { font-family: Consolas,"SF Mono",Menlo,monospace; font-size: 8pt; background: #f2f4f6;
+         padding: 0 1.5pt; }
+  ol, ul { margin: 2pt 0 4pt; padding-left: 13pt; }
+  li { margin-bottom: 1.3pt; text-align: justify; }
+  .eq { text-align: center; margin: 3pt 0 4pt; font-size: 9.2pt; }
+  .refs { font-size: 8.1pt; } .refs li { margin-bottom: 1.3pt; }
   .pb { page-break-before: auto; }
-  ol.two { column-count: 1; padding-left: 20pt; }
-  ol.two li { list-style-position: outside; text-indent: 0; padding-left: 0; }
-  .note { font-size: 9pt; color: #555; font-style: italic; }
+  ol.two { column-count: 2; column-gap: 11pt; padding-left: 0; }
+  ol.two li { break-inside: avoid; list-style-position: inside; text-indent: -10pt; padding-left: 10pt; }
+  .note { font-size: 7.8pt; color: #555; font-style: italic; }
   .bad { color: #B02E0C; font-weight: 700; }
 </style>
 
