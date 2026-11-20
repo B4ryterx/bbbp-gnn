@@ -66,7 +66,7 @@ guarantees no acyclic molecule in test has an acyclic twin in train.
 | file | what it is |
 |---|---|
 | `BBBP_molecular_property_prediction.ipynb` | the whole study, self-contained and executed: every function is defined in a cell, nothing is imported from `bbbp/`, all outputs and figures visible |
-| `report/Brandon-Jason_Adebayo_25011100_ENG2440_A3.pdf` | 7-page report — 6 pages of body, then references and two appendices (reproducibility, per-seed results) |
+| `report/Brandon-Jason_25011100_ENG2440_A3.docx` / `report/Brandon-Jason_25011100_ENG2440_A3.pdf` | 7-page report — 6 pages of body, then references and two appendices (reproducibility, per-seed results) |
 | `report/report.html` | the report's source; regenerate the PDF with headless Chrome |
 | `results/` | `results.json`, `comparison.csv`, `error_rows_scaffold.csv`, 11 figures |
 
